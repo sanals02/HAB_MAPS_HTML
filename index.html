@@ -45,6 +45,7 @@
     });
  
     // === ESRI World Imagery (High-Resolution Satellite) ===
+   // === ESRI World Imagery (High-Resolution Satellite) ===
     const esriSatellite = L.tileLayer(
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
       {
@@ -54,8 +55,8 @@
     ).addTo(map);
  
     // === ESRI Label Layer (shows street names, places, buildings) ===
-    const esriLabels = L.tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/%7Bz%7D/%7By%7D/%7Bx%7D%22,
+     const esriLabels = L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
       {
         maxZoom: 22,
         opacity: 1,
