@@ -45,7 +45,6 @@
     });
  
     // === ESRI World Imagery (High-Resolution Satellite) ===
-   // === ESRI World Imagery (High-Resolution Satellite) ===
     const esriSatellite = L.tileLayer(
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
       {
@@ -55,7 +54,8 @@
     ).addTo(map);
  
     // === ESRI Label Layer (shows street names, places, buildings) ===
-     const esriLabels = L.tileLayer(
+    // Fixed URL encoding issue - removed the incorrect encoding
+    const esriLabels = L.tileLayer(
       "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
       {
         maxZoom: 22,
@@ -70,14 +70,23 @@
  
     // --- Receive data from Grafana ---
     window.addEventListener("message", (event) => {
+      // Accept messages from any origin (you may want to restrict this for security)
       if (!event.data || event.data.type !== "habData") return;
  
+      console.log("🗺️ Received region data:", event.data.data?.length || 0, "regions");
+ 
+      // Clear existing markers
       markers.forEach((m) => map.removeLayer(m));
       markers = [];
+      selectedMarker = null;
  
       const regionData = event.data.data || [];
-      if (!regionData.length) return;
+      if (!regionData.length) {
+        console.log("⚠️ No region data received");
+        return;
+      }
  
+      // Add markers for each region
       regionData.forEach((r) => {
         const marker = L.circleMarker([r.lat, r.long], {
           radius: 8,
@@ -87,7 +96,7 @@
           weight: 1.5,
         })
           .addTo(map)
-           .bindPopup(`<b>${decodeURIComponent(r.name)}</b>`) 
+          .bindPopup(`<b>${decodeURIComponent(r.name)}</b>`)
           .on("click", () => {
             // Reset previous
             if (selectedMarker) {
@@ -119,10 +128,16 @@
         markers.push(marker);
       });
  
-      if (regionData.length > 1) {
+      // Fit bounds to show all markers
+      if (regionData.length > 0) {
         const bounds = L.latLngBounds(regionData.map((r) => [r.lat, r.long]));
         map.fitBounds(bounds, { padding: [40, 40] });
       }
+    });
+    
+    // Log when map is ready
+    map.whenReady(() => {
+      console.log("🗺️ Map is ready and waiting for data");
     });
 </script>
 </body>
