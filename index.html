@@ -7,44 +7,26 @@
  
   <!-- Leaflet -->
 <link
-
     rel="stylesheet"
-
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-
   />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
  
   <style>
-
     html, body {
-
       height: 100%;
-
       margin: 0;
-
       background: #000;
-
       font-family: "TheSansArabic", sans-serif;
-
     }
-
     #map {
-
       height: 100%;
-
       width: 100%;
-
     }
-
     .leaflet-popup-content {
-
       text-align: center;
-
       direction: rtl;
-
       font-size: 14px;
-
     }
 </style>
 </head>
@@ -53,147 +35,89 @@
 <div id="map"></div>
  
   <script>
-
     // === Initialize map centered on Hafar Al-Batin ===
-
     const map = L.map("map", {
-
-      center: [28.4322, 45.9708],
-
-      zoom: 10,
-
-      minZoom: 2,
-
+      center: [28.4322, 45.9708], // 🏙️ City center
+      zoom: 13,                   // ⬅️ Matching Panel 1 zoom level
+      minZoom: 10,
       maxZoom: 22,
-
       zoomControl: true,
-
     });
  
-    // === ✅ ESRI World Street Map (Normal beige Arabic map) ===
-
+    // === ESRI World Street Map (Normal beige Arabic map) ===
     const esriStreet = L.tileLayer(
-
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
-
       {
-
         maxZoom: 19,
-
-        minZoom: 2
-
+        attribution: "© Esri"
       }
-
     ).addTo(map);
  
     // === Marker handling ===
-
     let markers = [];
-
     let selectedMarker = null;
  
     // --- Receive data from Grafana ---
-
     window.addEventListener("message", (event) => {
-
       if (!event.data || event.data.type !== "habData") return;
  
       // Remove old markers
-
       markers.forEach((m) => map.removeLayer(m));
-
       markers = [];
  
       const regionData = event.data.data || [];
-
+      console.log("📍 [Panel 2] regionData received in map:", regionData);
+      
       if (!regionData.length) return;
  
       // Add new markers
-
       regionData.forEach((r) => {
-
         const marker = L.circleMarker([r.lat, r.long], {
-
           radius: 8,
-
-          color: "#ff0000", // 🔴 Red border
-
-          fillColor: "#ff0000", // 🔴 Red fill
-
-          fillOpacity: 0.85,
-
+          color: "#ff0000",
+          fillColor: "#ff0000",
+          fillOpacity: 0.9,
           weight: 1.5,
-
         })
-
           .addTo(map)
-
-          .bindPopup(`<b>${decodeURIComponent(r.name)}</b>`)
-
+          .bindPopup(`<b>${decodeURIComponent(r.name)}</b>`) // ✅ FIXED SYNTAX
           .on("click", () => {
-
+            // Reset previous marker
             if (selectedMarker) {
-
               selectedMarker.setStyle({
-
                 color: "#ff0000",
-
                 fillColor: "#ff0000",
-
                 radius: 8,
-
               });
-
             }
  
-            // Highlight the selected marker
-
+            // Highlight current marker
             marker.setStyle({
-
-              color: "#ffff00", // 🟡 Yellow border on selection
-
+              color: "#ffff00",
               fillColor: "#ffff00",
-
               radius: 11,
-
             });
-
             selectedMarker = marker;
  
-            // Send selection to Grafana
-
+            // Send region to Grafana (without reload)
             window.parent.postMessage(
-
               {
-
                 type: "mapClick",
-
-                region: decodeURIComponent(r.name),
-
+                region: r.name, // Send encoded name
               },
-
               "*"
-
             );
-
           });
  
         markers.push(marker);
-
       });
  
-      // Auto zoom to markers
-
+      // Auto-zoom to fit all markers
       if (regionData.length > 1) {
-
         const bounds = L.latLngBounds(regionData.map((r) => [r.lat, r.long]));
-
         map.fitBounds(bounds, { padding: [40, 40] });
-
       }
-
     });
 </script>
 </body>
 </html>
- 
