@@ -37,14 +37,14 @@
   <script>
     // === Initialize map centered on Hafar Al-Batin ===
     const map = L.map("map", {
-      center: [28.4322, 45.9708], // 🏙️ City center
-      zoom: 13,                   // ⬅️ Matching Panel 1 zoom level
+      center: [28.4322, 45.9708],
+      zoom: 13,
       minZoom: 10,
       maxZoom: 22,
       zoomControl: true,
     });
- 
-    // === ESRI World Street Map (Normal beige Arabic map) ===
+
+    // === ESRI World Street Map ===
     const esriStreet = L.tileLayer(
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
       {
@@ -52,67 +52,63 @@
         attribution: "© Esri"
       }
     ).addTo(map);
- 
-    // === Marker handling ===
+
+    // === Define Custom Icons ===
+    // Replace 'icon-url.png' with the actual link to your marker image
+    const customIcon = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', // Replace with your image URL
+        iconSize: [35, 35], // Size of the icon
+        iconAnchor: [17, 35], // Point of the icon which will correspond to marker's location
+        popupAnchor: [0, -35] // Point from which the popup should open relative to the iconAnchor
+    });
+
+    const selectedIcon = L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', // You can use a different color image for selection
+        iconSize: [45, 45], 
+        iconAnchor: [22, 45],
+        popupAnchor: [0, -45]
+    });
+
     let markers = [];
     let selectedMarker = null;
- 
-    // --- Receive data from Grafana ---
+
     window.addEventListener("message", (event) => {
       if (!event.data || event.data.type !== "habData") return;
- 
+
       // Remove old markers
       markers.forEach((m) => map.removeLayer(m));
       markers = [];
- 
+
       const regionData = event.data.data || [];
-      console.log("📍 [Panel 2] regionData received in map:", regionData);
       
       if (!regionData.length) return;
- 
-      // Add new markers
+
+      // Add new markers using L.marker instead of L.circleMarker
       regionData.forEach((r) => {
-        const marker = L.circleMarker([r.lat, r.long], {
-          radius: 8,
-          color: "#ff0000",
-          fillColor: "#ff0000",
-          fillOpacity: 0.9,
-          weight: 1.5,
+        const marker = L.marker([r.lat, r.long], {
+          icon: customIcon
         })
           .addTo(map)
-          .bindPopup(`<b>${decodeURIComponent(r.name)}</b>`) // ✅ FIXED SYNTAX
+          .bindPopup(`<b>${decodeURIComponent(r.name)}</b>`)
           .on("click", () => {
-            // Reset previous marker
+            // Reset previous marker icon
             if (selectedMarker) {
-              selectedMarker.setStyle({
-                color: "#ff0000",
-                fillColor: "#ff0000",
-                radius: 8,
-              });
+              selectedMarker.setIcon(customIcon);
             }
- 
-            // Highlight current marker
-            marker.setStyle({
-              color: "#ffff00",
-              fillColor: "#ffff00",
-              radius: 11,
-            });
+
+            // Highlight current marker by changing icon or size
+            marker.setIcon(selectedIcon);
             selectedMarker = marker;
- 
-            // Send region to Grafana (without reload)
-            window.parent.postMessage(
-              {
+
+            window.parent.postMessage({
                 type: "mapClick",
-                region: r.name, // Send encoded name
-              },
-              "*"
-            );
+                region: r.name,
+            }, "*");
           });
- 
+
         markers.push(marker);
       });
- 
-      // Auto-zoom to fit all markers
+
       if (regionData.length > 1) {
         const bounds = L.latLngBounds(regionData.map((r) => [r.lat, r.long]));
         map.fitBounds(bounds, { padding: [40, 40] });
