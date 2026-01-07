@@ -56,10 +56,9 @@
 
 <body>
 <div id="map"></div>
-
 <div class="legend-container">
     <div class="legend-item" style="background: green;" data-label=">= 75%"></div>
-    <div class="legend-item" style="background: #3A8A5E;" data-label="50% - 75%"></div>
+    <div class="legend-item" style="background: #6037B2;" data-label="50% - 75%"></div>
     <div class="legend-item" style="background: red;" data-label="< 50%"></div>
 </div>
 
@@ -85,12 +84,17 @@
         });
     }
 
-    function getMarkerIcon(value) {
-        const val = parseFloat(value);
-        if (val >= 75) return createIcon("green");
-        if (val >= 50) return createIcon("#3A8A5E");
-        return createIcon("red");
+function getMarkerIcon(value) {
+    const val = parseFloat(value);
+    
+    if (val >= 75) {
+        return createIcon("green"); // Green for >= 75
+    } else if (val >= 50) {
+        return createIcon("#6037B2"); // Updated to Purple for 50 - 75
+    } else {
+        return createIcon("red"); // Red for < 50
     }
+}
 
     let markers = [];
 
