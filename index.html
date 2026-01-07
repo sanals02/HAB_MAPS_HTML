@@ -2,100 +2,120 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8" />
-<title>خريطة حفر الباطن - النمط العادي</title>
+<title>خريطة حفر الباطن</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
- 
-  <!-- Leaflet -->
-<link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
- 
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      background: #000;
-      font-family: "TheSansArabic", sans-serif;
+
+<style>
+    html, body { height: 100%; margin: 0; background: #000; font-family: sans-serif; overflow: hidden; }
+    #map { height: 100%; width: 100%; }
+    
+    /* Legend Styles */
+    .legend-container {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 10px;
+        border-radius: 8px;
+        display: flex;
+        gap: 15px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.3);
     }
-    #map {
-      height: 100%;
-      width: 100%;
+    .legend-item {
+        width: 20px;
+        height: 20px;
+        border-radius: 3px;
+        cursor: help;
+        position: relative;
     }
-    .leaflet-popup-content {
-      text-align: center;
-      direction: rtl;
-      font-size: 14px;
+    /* Hover Label */
+    .legend-item:hover::after {
+        content: attr(data-label);
+        position: absolute;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #333;
+        color: #fff;
+        padding: 5px 10px;
+        border-radius: 4px;
+        white-space: nowrap;
+        font-size: 12px;
+        font-weight: bold;
     }
+
+    .leaflet-popup-content { text-align: center; direction: rtl; }
 </style>
 </head>
- 
+
 <body>
 <div id="map"></div>
- 
- <script>
-    const map = L.map("map", {
-      center: [28.4322, 45.9708],
-      zoom: 13,
-    });
+
+<div class="legend-container">
+    <div class="legend-item" style="background: green;" data-label=">= 75%"></div>
+    <div class="legend-item" style="background: #3A8A5E;" data-label="50% - 75%"></div>
+    <div class="legend-item" style="background: red;" data-label="< 50%"></div>
+</div>
+
+<script>
+    const map = L.map("map", { center: [28.4322, 45.9708], zoom: 13 });
 
     L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", {
-      attribution: "© Esri"
+        attribution: "© Esri"
     }).addTo(map);
 
-    // Function to get icon URL based on value
-    function getColorIcon(value) {
-      let color = "green"; // Default
-      const val = parseFloat(value);
+    // SVG Marker Templates for custom colors
+    function createIcon(color) {
+        const svgTemplate = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${color}" width="30" height="30">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-12-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>`;
+        return L.divIcon({
+            className: 'custom-marker',
+            html: svgTemplate,
+            iconSize: [30, 30],
+            iconAnchor: [15, 30],
+            popupAnchor: [0, -30]
+        });
+    }
 
-      if (val < 50) color = "red";
-      else if (val < 75) color = "orange";
-      else if (val < 90) color = "yellow";
-      else color = "green";
-
-      // Using Google Charts dynamic icons for colors
-      return L.icon({
-        iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-${color}.png`,
-        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-        iconSize: [25, 41],
-        iconAnchor: [12, 41],
-        popupAnchor: [1, -34],
-        shadowSize: [41, 41]
-      });
+    function getMarkerIcon(value) {
+        const val = parseFloat(value);
+        if (val >= 75) return createIcon("green");
+        if (val >= 50) return createIcon("#3A8A5E");
+        return createIcon("red");
     }
 
     let markers = [];
 
     window.addEventListener("message", (event) => {
-      if (!event.data || event.data.type !== "habData") return;
+        if (!event.data || event.data.type !== "habData") return;
 
-      markers.forEach((m) => map.removeLayer(m));
-      markers = [];
+        markers.forEach(m => map.removeLayer(m));
+        markers = [];
 
-      const regionData = event.data.data || [];
+        const regionData = event.data.data || [];
 
-      regionData.forEach((r) => {
-        // Use the 'access' or 'satisfaction' value to determine color
-        const markerIcon = getColorIcon(r.value); 
+        regionData.forEach((r) => {
+            const icon = getMarkerIcon(r.value);
+            const marker = L.marker([r.lat, r.long], { icon: icon })
+                .addTo(map)
+                .bindPopup(`<b>${decodeURIComponent(r.name)}</b><br>Value: ${r.value}%`)
+                .on("click", () => {
+                    window.parent.postMessage({ type: "mapClick", region: r.name }, "*");
+                });
+            markers.push(marker);
+        });
 
-        const marker = L.marker([r.lat, r.long], { icon: markerIcon })
-          .addTo(map)
-          .bindPopup(`<b>${decodeURIComponent(r.name)}</b><br>Value: ${r.value}`)
-          .on("click", () => {
-            window.parent.postMessage({
-                type: "mapClick",
-                region: r.name,
-            }, "*");
-          });
-
-        markers.push(marker);
-      });
-
-      if (regionData.length > 1) {
-        const bounds = L.latLngBounds(regionData.map((r) => [r.lat, r.long]));
-        map.fitBounds(bounds, { padding: [40, 40] });
-      }
+        if (regionData.length > 0) {
+            const bounds = L.latLngBounds(regionData.map(r => [r.lat, r.long]));
+            map.fitBounds(bounds, { padding: [40, 40] });
+        }
     });
 </script>
 </body>
