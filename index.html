@@ -2,8 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8" />
-<title>خريطة حفر الباطن
-</title>
+<title>خريطة حفر الباطن</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -57,9 +56,9 @@
 <body>
 <div id="map"></div>
 <div class="legend-container">
-    <div class="legend-item" style="background: green;" data-label=">= 75%"></div>
-    <div class="legend-item" style="background: #6037B2;" data-label="50% - 75%"></div>
-    <div class="legend-item" style="background: #5634AD;" data-label="< 50%"></div>
+    <div class="legend-item" style="background: #6AC88E;" data-label=">= 75%"></div>
+    <div class="legend-item" style="background: #5550E7;" data-label="50% - 75%"></div>
+    <div class="legend-item" style="background: #9575CD;" data-label="< 50%"></div>
 </div>
 
 <script>
@@ -69,7 +68,6 @@
         attribution: "© Esri"
     }).addTo(map);
 
-    // SVG Marker Templates for custom colors
     function createIcon(color) {
         const svgTemplate = `
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${color}" width="30" height="30">
@@ -88,11 +86,11 @@ function getMarkerIcon(value) {
     const val = parseFloat(value);
     
     if (val >= 75) {
-        return createIcon("green"); // Green for >= 75
+        return createIcon("#6AC88E"); // Green
     } else if (val >= 50) {
-        return createIcon("#6037B2"); // Updated to Purple for 50 - 75
+        return createIcon("#5550E7"); // Blue/Indigo
     } else {
-        return createIcon("#5634AD"); // Red for < 50
+        return createIcon("#9575CD"); // New Requested Color for < 50
     }
 }
 
