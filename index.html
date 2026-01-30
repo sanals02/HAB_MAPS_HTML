@@ -57,7 +57,7 @@
 <div id="map"></div>
 <div class="legend-container">
     <div class="legend-item" style="background: #6AC88E;" data-label=">= 75%"></div>
-    <div class="legend-item" style="background: #7e58e0;" data-label="50% - 75%"></div>
+    <div class="legend-item" style="background: #48b9c7;" data-label="50% - 75%"></div>
     <div class="legend-item" style="background: #5550E7;" data-label="< 50%"></div>
 </div>
 
@@ -88,7 +88,7 @@ function getMarkerIcon(value) {
     if (val >= 75) {
         return createIcon("#6AC88E"); // Green
     } else if (val >= 50) {
-        return createIcon("#7e58e0"); // Blue/Indigo
+        return createIcon("#48b9c7"); // Blue/Indigo
     } else {
         return createIcon("#5550E7"); // New Requested Color for < 50
     }
